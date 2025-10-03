@@ -1,13 +1,12 @@
-import { IDataSource, IDataFilterResult, LayoutRenderType } from "@pnp/modern-search-extensibility";
-import ISearchResultsWebPartProps from "../ISearchResultsWebPartProps";
+import { IDataSource, IDataFilterResult, LayoutRenderType } from '@pnp/modern-search-extensibility';
+import ISearchResultsWebPartProps from '../ISearchResultsWebPartProps';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
-import { IDataContext } from "@pnp/modern-search-extensibility";
-import { PageContext } from "@microsoft/sp-page-context";
-import { ServiceScope } from "@microsoft/sp-core-library";
-import { IWebPartTitleProps } from "@pnp/spfx-controls-react/lib/WebPartTitle";
+import { IDataContext } from '@pnp/modern-search-extensibility';
+import { PageContext } from '@microsoft/sp-page-context';
+import { ServiceScope } from '@microsoft/sp-core-library';
+import { IWebPartTitleProps } from '@pnp/spfx-controls-react/lib/WebPartTitle';
 
 export interface ISearchResultsContainerProps {
-
   /**
    * The current Web Part data context
    */
@@ -61,8 +60,8 @@ export interface ISearchResultsContainerProps {
   /**
    * Handler when a item has been selected from results
    */
-  onItemSelected: (currentSelectedItems: {[key: string]: any}[]) => void; 
-  
+  onItemSelected: (currentSelectedItems: { [key: string]: any }[]) => void;
+
   /**
    * Handler when no results have been found
    */
@@ -82,4 +81,9 @@ export interface ISearchResultsContainerProps {
    * The layout render type (Handlebars, Adaptive Cards, etc.)
    */
   renderType: LayoutRenderType;
+
+  /**
+   * Handler to capture search telemetry
+   */
+  onCaptureSearchTelemetry?: (queryText: string, additionalMetadata?: any) => void;
 }
