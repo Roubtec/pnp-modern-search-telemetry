@@ -1,0 +1,7 @@
+lib
+node_modules
+.github
+sharepoint
+dist
+temp
+.vscode
