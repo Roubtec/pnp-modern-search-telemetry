@@ -67,8 +67,10 @@ export interface IFilterTelemetryDetail {
   isMultiValue: boolean;
   /** The operator used between values */
   valuesOperator: 'AND' | 'OR';
+  /** Values (array of strings) */
+  values: string[];
   /** Hashed values for privacy (array of hash strings) */
-  hashedValues: string[];
+  // hashedValues: string[];
 }
 
 /**
@@ -241,7 +243,8 @@ export class FilterContextService {
         valueCount: f.selectedValues.length,
         isMultiValue: f.isMultiValue,
         valuesOperator: f.valuesOperator,
-        hashedValues: f.selectedValues.map((v) => this._hashValue(v)),
+        values: f.selectedValues.map((v) => v?.substring(0, 64) || '< no value >'), // Include actual values truncated to 50 chars for context
+        // hashedValues: f.selectedValues.map((v) => this._hashValue(v)),
       })),
       webPartInstanceId: filterContext.webPartInstanceId,
       filterUrlPresent: !!filterContext.filterUrlData,

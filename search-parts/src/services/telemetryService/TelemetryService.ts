@@ -199,9 +199,7 @@ export class TelemetryService {
         throw new TelemetryError('Invalid telemetry data structure', TelemetryErrorCode.INVALID_CONFIG);
       }
 
-      TelemetryLogger.info('Sending telemetry data:', {
-        queryLength: queryText.length,
-      });
+      TelemetryLogger.info('Sending telemetry data:', telemetryData);
 
       // Send the data to the endpoint (non-blocking)
       await this._sendTelemetryData(telemetryData);

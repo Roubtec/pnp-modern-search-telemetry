@@ -50,8 +50,8 @@ export interface IFilterTelemetryDetail {
   isMultiValue: boolean;
   /** The operator used between values */
   valuesOperator: 'AND' | 'OR';
-  /** Hashed values for privacy (array of hash strings) */
-  hashedValues: string[];
+  /** Values (array of strings) */
+  values: string[];
 }
 
 /**
