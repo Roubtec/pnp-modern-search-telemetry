@@ -95,7 +95,7 @@ export class UserContextService {
     referrer: string;
   } {
     return {
-      sessionId: this._generateSessionId(),
+      sessionId: this._generateSessionId().sessionId,
       browserInfo: navigator.userAgent,
       timestamp: new Date(),
       pageUrl: window.location.href,
@@ -106,7 +106,7 @@ export class UserContextService {
   /**
    * Generates a session identifier
    */
-  private _generateSessionId(): string {
+  private _generateSessionId(): { userHash: string; timestamp: number; sessionId: string } {
     // Create a session ID based on user, timestamp, and random component
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
@@ -115,6 +115,7 @@ export class UserContextService {
       return a & a;
     }, 0);
 
-    return Math.abs(userHash) + '-' + timestamp + '-' + random;
+    const absUserHash = Math.abs(userHash).toString();
+    return { userHash: absUserHash, timestamp, sessionId: `${absUserHash}-${timestamp}-${random}` };
   }
 }
