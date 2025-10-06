@@ -199,9 +199,7 @@ export class TelemetryService {
         throw new TelemetryError('Invalid telemetry data structure', TelemetryErrorCode.INVALID_CONFIG);
       }
 
-      TelemetryLogger.info('Sending telemetry data:', {
-        queryLength: queryText.length,
-      });
+      TelemetryLogger.info('Sending telemetry data:', telemetryData);
 
       // Send the data to the endpoint (non-blocking)
       await this._sendTelemetryData(telemetryData);
@@ -277,7 +275,7 @@ export class TelemetryService {
 
     const telemetryData: ITelemetryData = {
       queryText,
-      userId: currentUser.loginName,
+      userId: this._configuration.includePersonalInfo ? currentUser.loginName : '[REDACTED]',
       userDisplayName: this._configuration.includePersonalInfo ? currentUser.displayName : '[REDACTED]',
       userEmail: this._configuration.includePersonalInfo ? currentUser.email : '[REDACTED]',
       siteUrl: web.absoluteUrl,
@@ -288,7 +286,7 @@ export class TelemetryService {
         wordCount: queryText.trim().split(whitespaceWordBoundaryRegex).length,
         hasSpecialChars: specialCharRegex.test(queryText),
         userAgent: navigator.userAgent,
-        sessionId: this._generateSessionId(),
+        sessionId: this._generateSessionId().sessionId,
         searchContext: {
           filters: filterTelemetryData,
           queryEnhancement: {
@@ -344,7 +342,7 @@ export class TelemetryService {
   /**
    * Generates a session identifier for grouping related searches
    */
-  private _generateSessionId(): string {
+  private _generateSessionId(): { userHash: string; timestamp: number; sessionId: string } {
     // Simple session ID based on user and timestamp
     const timestamp = Date.now();
     const userHash = this._pageContext.user.loginName.split('').reduce((a: number, b: string) => {
@@ -352,6 +350,7 @@ export class TelemetryService {
       return a & a;
     }, 0);
 
-    return Math.abs(userHash) + '-' + timestamp;
+    const absUserHash = Math.abs(userHash).toString();
+    return { userHash: absUserHash, timestamp, sessionId: `${absUserHash}-${timestamp}` };
   }
 }
