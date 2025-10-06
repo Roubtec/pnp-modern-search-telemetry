@@ -209,4 +209,7 @@ export default interface ISearchResultsWebPartProps extends IBaseWebPartProps {
 
   /** The instance ID of the PnP Search Filters web part to monitor */
   telemetryFilterWebPartId?: string;
+
+  /** The URL query parameter name used for filter deep linking (default: 'f' for PnP Modern Search) */
+  telemetryFilterUrlParameter?: string;
 }

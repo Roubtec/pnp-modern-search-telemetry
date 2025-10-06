@@ -1,7 +1,7 @@
 import { ServiceScope, ServiceKey } from '@microsoft/sp-core-library';
 import { PageContext } from '@microsoft/sp-page-context';
 import { HttpClient, HttpClientResponse } from '@microsoft/sp-http';
-import { FilterContextService, IFilterContext, IFilterTelemetryData } from './FilterContextService';
+import { FilterContextService, IFilterContext, IFilterTelemetryData, IFilterContextConfiguration } from './FilterContextService';
 import { TelemetryError, TelemetryErrorCode, TelemetryValidator, TelemetryLogger } from './ErrorHandling';
 
 const whitespaceWordBoundaryRegex = /\s+/;
@@ -77,6 +77,8 @@ export interface ITelemetryConfiguration {
   enableLogging?: boolean;
   /** The instance ID of the PnP Search Filters web part to monitor */
   filterWebPartId?: string;
+  /** The URL query parameter name used for filter deep linking (default: 'f' for PnP Modern Search) */
+  filterUrlParameter?: string;
 }
 
 /**
@@ -105,6 +107,7 @@ export class TelemetryService {
       includePersonalInfo: true,
       enableLogging: false,
       filterWebPartId: '76abee26-57ed-47ad-b309-6f514f50e6d7', // Default PnP Search Filters web part ID
+      filterUrlParameter: 'f', // PnP Modern Search standard parameter
     };
   }
 
@@ -130,10 +133,15 @@ export class TelemetryService {
     TelemetryLogger.setLoggingEnabled(this._configuration.enableLogging || false);
 
     // Update FilterContextService configuration if available
-    if (this._filterContextService && config.filterWebPartId) {
-      this._filterContextService.updateConfiguration({
-        filterWebPartId: config.filterWebPartId,
-      });
+    if (this._filterContextService && (config.filterWebPartId || config.filterUrlParameter)) {
+      const filterConfig: Partial<IFilterContextConfiguration> = {};
+      if (config.filterWebPartId) {
+        filterConfig.filterWebPartId = config.filterWebPartId;
+      }
+      if (config.filterUrlParameter) {
+        filterConfig.filterUrlParameter = config.filterUrlParameter;
+      }
+      this._filterContextService.updateConfiguration(filterConfig);
     }
 
     TelemetryLogger.info('Configuration updated:', {
