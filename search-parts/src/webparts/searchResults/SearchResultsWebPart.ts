@@ -2826,6 +2826,13 @@ export default class SearchResultsWebPart extends BaseWebPart<ISearchResultsWebP
             disabled: !this.properties.telemetryEnabled,
             rows: 1,
           }),
+          PropertyPaneTextField('telemetryFilterUrlParameter', {
+            label: 'Filter URL Parameter Name',
+            description: 'The query parameter used for filter deep linking (default: "f" for PnP Modern Search). Only change if you customized PnP source.',
+            placeholder: 'f',
+            disabled: !this.properties.telemetryEnabled,
+            maxLength: 50,
+          }),
         ],
       },
     ];
@@ -2844,6 +2851,7 @@ export default class SearchResultsWebPart extends BaseWebPart<ISearchResultsWebP
           includePersonalInfo: this.properties.telemetryIncludePersonalInfo !== false,
           enableLogging: this.properties.telemetryEnableLogging || false,
           filterWebPartId: this.properties.telemetryFilterWebPartId || '76abee26-57ed-47ad-b309-6f514f50e6d7',
+          filterUrlParameter: this.properties.telemetryFilterUrlParameter || 'f',
         });
       } catch (error) {
         Log.error(LogSource, new Error(`Failed to update telemetry configuration: ${error.message}`), this.context.serviceScope);

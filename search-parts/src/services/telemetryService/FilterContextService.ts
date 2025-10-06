@@ -2,6 +2,20 @@ import { ServiceScope, ServiceKey } from '@microsoft/sp-core-library';
 import { TelemetryLogger } from './ErrorHandling';
 
 /**
+ * FilterContextService - Extracts filter information from PnP Modern Search components
+ *
+ * URL Parameter Detection:
+ * - PnP Modern Search hardcodes the filter parameter as 'f' in SearchFiltersContainer.tsx
+ *   (see constant: DEEPLINK_QUERYSTRING_PARAM = 'f')
+ * - This service defaults to 'f' but can be configured via filterUrlParameter
+ * - As a fallback, it also checks 'filters' in case of custom implementations
+ *
+ * The filter URL parameter is NOT exposed in the Search Filters web part properties,
+ * so runtime detection is not possible. Use the configuration option if you've customized
+ * the PnP Modern Search source code.
+ */
+
+/**
  * Interface representing a filter applied by the user
  */
 export interface IAppliedFilter {
@@ -91,6 +105,8 @@ export interface IFilterTelemetryData {
 export interface IFilterContextConfiguration {
   /** The instance ID of the PnP Search Filters web part to monitor */
   filterWebPartId: string;
+  /** The URL query parameter name used for filter deep linking (default: 'f' for PnP Modern Search) */
+  filterUrlParameter: string;
 }
 
 /**
@@ -107,6 +123,7 @@ export class FilterContextService {
     // Initialize default configuration
     this._configuration = {
       filterWebPartId: '76abee26-57ed-47ad-b309-6f514f50e6d7', // Default PnP Search Filters web part ID
+      filterUrlParameter: 'f', // PnP Modern Search standard parameter name (hardcoded in SearchFiltersContainer.tsx)
     };
 
     // Initialize observer when service scope is ready
@@ -118,12 +135,30 @@ export class FilterContextService {
   /**
    * Updates the filter context service configuration
    * @param config New configuration settings
+   *
+   * @example
+   * // Use default PnP Modern Search parameter (recommended)
+   * filterContextService.updateConfiguration({
+   *   filterUrlParameter: 'f'  // This is the default
+   * });
+   *
+   * @example
+   * // Use custom parameter if you've modified PnP Modern Search source
+   * filterContextService.updateConfiguration({
+   *   filterUrlParameter: 'filters'
+   * });
+   *
+   * @remarks
+   * The filterUrlParameter defaults to 'f' which is hardcoded in PnP Modern Search
+   * (see SearchFiltersContainer.tsx DEEPLINK_QUERYSTRING_PARAM constant).
+   * Only change this if you've customized the PnP Modern Search source code.
    */
   public updateConfiguration(config: Partial<IFilterContextConfiguration>): void {
     this._configuration = { ...this._configuration, ...config };
 
     TelemetryLogger.info('FilterContextService configuration updated:', {
       filterWebPartId: this._configuration.filterWebPartId ? 'SET' : 'NOT_SET',
+      filterUrlParameter: this._configuration.filterUrlParameter || 'default',
     });
   }
 
@@ -226,7 +261,17 @@ export class FilterContextService {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
       // Check both URL params and hash params for filter data
-      let filterData = urlParams.get('filters') || hashParams.get('filters');
+      // Use configured parameter name first, then fall back to common alternatives
+      const primaryParam = this._configuration.filterUrlParameter || 'f';
+      let filterData =
+        urlParams.get(primaryParam) || hashParams.get(primaryParam) || urlParams.get('f') || urlParams.get('filters') || hashParams.get('f') || hashParams.get('filters');
+
+      TelemetryLogger.debug('FilterContextService: URL filter extraction', {
+        configuredParam: primaryParam,
+        hasFilterData: !!filterData,
+        filterDataLength: filterData?.length || 0,
+        url: window.location.href,
+      });
 
       if (!filterData) {
         return null;
@@ -257,6 +302,12 @@ export class FilterContextService {
         TelemetryLogger.debug('Failed to parse filter URL data:', parseError);
       }
 
+      TelemetryLogger.debug('FilterContextService: Successfully extracted filters from URL', {
+        filterCount: filters.length,
+        operator,
+        filterFields: filters.map((f) => f.filterField),
+      });
+
       return {
         filters,
         operator,
@@ -272,13 +323,34 @@ export class FilterContextService {
    * Parses a single filter item from URL data
    */
   private _parseFilterItem(filterItem: any): IAppliedFilter {
+    // Handle PnP Modern Search filter structure
+    let selectedValues: string[] = [];
+    let valuesOperator: 'AND' | 'OR' = 'OR';
+
+    if (Array.isArray(filterItem.values)) {
+      // Extract actual values from the PnP structure: values[{name, value, operator}]
+      selectedValues = filterItem.values.map((v: any) => v.name || v.value || v.toString());
+    } else if (filterItem.value) {
+      selectedValues = [filterItem.value];
+    }
+
+    // Map PnP operator format
+    if (filterItem.operator) {
+      if (typeof filterItem.operator === 'string') {
+        valuesOperator = filterItem.operator.toUpperCase() as 'AND' | 'OR';
+      } else {
+        // PnP sometimes uses numeric operators: 0 = OR, 1 = AND
+        valuesOperator = filterItem.operator === 1 ? 'AND' : 'OR';
+      }
+    }
+
     return {
       filterField: filterItem.filterName || filterItem.field || filterItem.name || '',
       displayName: filterItem.displayName || filterItem.filterName || filterItem.field || '',
-      selectedValues: Array.isArray(filterItem.values) ? filterItem.values : [filterItem.value || ''],
-      valuesOperator: filterItem.operator || 'OR',
+      selectedValues,
+      valuesOperator,
       filterType: this._determineFilterType(filterItem),
-      isMultiValue: Array.isArray(filterItem.values) ? filterItem.values.length > 1 : false,
+      isMultiValue: selectedValues.length > 1,
     };
   }
 
