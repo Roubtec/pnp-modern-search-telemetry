@@ -2798,7 +2798,7 @@ export default class SearchResultsWebPart extends BaseWebPart<ISearchResultsWebP
           }),
           PropertyPaneTextField('telemetryApiKey', {
             label: 'API Key (Optional)',
-            description: 'Authorization key for the telemetry endpoint, will add Bearer <api-key> into the request header.',
+            description: 'Authorization key for the telemetry endpoint, will add "Bearer <api-key>" into the request header.',
             placeholder: 'your-api-key-here',
             disabled: !this.properties.telemetryEnabled,
             rows: 1,
